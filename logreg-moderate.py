@@ -1,7 +1,7 @@
 import csv
 
-writefile = open ("/home/sajeewa/Desktop/Blood Donation ML/Blood_Donation_Prediction/output/probability/new_shit_yoo.csv", "w")
-with open("/home/sajeewa/Downloads/submission-log-reg.csv", "r") as file:
+writefile = open ("/home/rabbie/Projects/Machine Learning/Driven Data/Blood_Donation_Prediction/output/probability/preprocessed/submission-log-reg-preprocessed-moderated", "w")
+with open("/home/rabbie/Projects/Machine Learning/Driven Data/Blood_Donation_Prediction/output/probability/preprocessed/submission-log-reg-preprocessed.csv", "r") as file:
     for line in file:
         vals = line.split(",")
         id = vals[0]
@@ -16,18 +16,7 @@ with open("/home/sajeewa/Downloads/submission-log-reg.csv", "r") as file:
                     prob = prob -  0.05 
                     # print "dd"
             data = "{},{}\n".format(id, prob)
-            print data
+            #print data
             writefile.write(data)
         except ValueError as shit:
             pass
-    
-        # print prob
-        # print id
-        # print prob
-        
-            # print prob
-       
-        # print data
-        
-        # file.write(id, prob)
-        
