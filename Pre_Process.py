@@ -4,6 +4,7 @@ import pandas as pd
 import numpy as np
 
 from matplotlib import pyplot as plt
+from sklearn import preprocessing
 
 
 # reading csv files to pandas data frames
@@ -39,7 +40,6 @@ frame.tight_layout
 # plotting the heat map
 # plt.show()
 
-
 # dropping Total Volume Donated (c.c.) column as it shows the strongest linear relationship with Number of Donations
 train_data.drop(columns=['Total Volume Donated (c.c.)'], inplace=True)
 test_data.drop(columns=['Total Volume Donated (c.c.)'], inplace=True)
@@ -51,18 +51,32 @@ train_data = train_data.rename({'Months since First Donation':'Days since First 
 train_data['Days since First Donation'] = train_data['Days since First Donation'].apply(lambda x: x*30)
 train_data['Days since Last Donation'] = train_data['Days since Last Donation'].apply(lambda x: x*30)
 
+test_data = test_data.rename({'Months since Last Donation':'Days since Last Donation'}, axis='columns')
+test_data = test_data.rename({'Months since First Donation':'Days since First Donation'}, axis='columns')
+
+test_data['Days since First Donation'] = test_data['Days since First Donation'].apply(lambda x: x*30)
+test_data['Days since Last Donation'] = test_data['Days since Last Donation'].apply(lambda x: x*30)
+
 # calculate the mean time period between two donations in days
-mean_wait_train = np.mean((train_data['Days since First Donation'] - train_data['Days since Last Donation'])/train_data['Number of Donations'])
+mean_wait = np.mean((train_data['Days since First Donation'] - train_data['Days since Last Donation'])/train_data['Number of Donations'])
 
 # add donation eligibility. True if Days since last donation > 60, False otherwise.
-eligibility_vector = pd.DataFrame(np.array(train_data['Days since First Donation'] > 60).T.astype(int),columns=['Donation Eligiblity'])
+eligibility_vector_train = pd.DataFrame(np.array(train_data['Days since First Donation'] > 60).T.astype(int),columns=['Donation Eligiblity'])
+eligibility_vector_test = pd.DataFrame(np.array(test_data['Days since First Donation'] > 60).T.astype(int),columns=['Donation Eligiblity'])
 
 # add donation likelihood
-likelihood_vector = pd.DataFrame(np.array(((train_data['Days since First Donation'] - train_data['Days since Last Donation'])/train_data['Number of Donations']) > mean_wait_train).T.astype(int), columns=['Donation Likelihood'])
+likelihood_vector_train = pd.DataFrame(np.array(((train_data['Days since First Donation'] - train_data['Days since Last Donation'])/train_data['Number of Donations']) > mean_wait).T.astype(int), columns=['Donation Likelihood'])
+likelihood_vector_test = pd.DataFrame(np.array(((test_data['Days since First Donation'] - test_data['Days since Last Donation'])/test_data['Number of Donations']) > mean_wait).T.astype(int), columns=['Donation Likelihood'])
 
 # add new vectors to the original dataset
-train_data = pd.concat([pd.concat([train_data, eligibility_vector], axis=1), likelihood_vector], axis=1)
+train_data = pd.concat([pd.concat([train_data, eligibility_vector_train], axis=1), likelihood_vector_train], axis=1)
+test_data = pd.concat([pd.concat([test_data, eligibility_vector_test], axis=1), likelihood_vector_test], axis=1)
+
+# normalizing the columns
+standard_scaler = preprocessing.StandardScaler()
+train_data.iloc[:,1:4] = standard_scaler.fit_transform(train_data.iloc[:,1:4])
+test_data.iloc[:,1:4] = standard_scaler.fit_transform(test_data.iloc[:,1:4])
 
 # write processed dataframes to files
-train_data.to_csv('processed_input/train.csv')
-test_data.to_csv('processed_input/test.csv')
+train_data.to_csv('processed_input/train.csv', index=False)
+test_data.to_csv('processed_input/test.csv', index=False)
